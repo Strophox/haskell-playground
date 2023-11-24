@@ -58,7 +58,7 @@ fibMemo = fixMemo fiblogic
 -- Prime numbers
 
 aaronPrime :: Int -> Bool
-aaronPrime n=[i|i<-[2..n],n`mod`i<1]==[n]
+aaronPrime n=[i |i<-[2..n],n`mod`i<1]==[n] -- no space before | breaks highlighting??!
 -- aaronPrime n=[i|i<-[2..n],mod n i<1]==[n]
 
 prime :: Int -> Bool
@@ -112,3 +112,19 @@ collatzFun = traverse print . monotonous . flip zip [1..] . map collatz $ [1..]
     -- collatz :: Integer -> Integer
     -- collatz = collatzStep 0
     -- collatzStep i n = if n==1 then i else collatzStep (i+1) (if even n then (n`div`2) else 3*n+1)
+
+
+--------------------------------------------------------------------------------
+
+{-
+-- Introduce continuation as accumulating parameter:
+--fac' n k = k (fac n)
+-- Then calculate:
+fac :: Integer -> Integer
+fac n = fac' n id
+  where
+    fac' :: Integer -> (Integer -> Integer) -> Integer
+    fac' 0 k = k 1
+    fac' n k = fac (n-1) (\m -> k (n * m))
+-- Now tail-recursive, but higher-order.
+-}
