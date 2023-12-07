@@ -5,6 +5,9 @@
 -- ./example
 
 import System.IO.Unsafe (unsafePerformIO) -- OH NO
+import Control.Monad
+import Control.Arrow
+import Control.Category
 --import Data.Bool (bool)
 --import System.Random -- myConstant = unsafePerformIO randomIO
 -- https://downloads.haskell.org/ghc/latest/docs/libraries/
@@ -69,16 +72,39 @@ ack 0 n = n+1
 ack m 0 = ack (m-1) 1
 ack m n = ack (m-1) (ack m (n-1))
 
-infix 5 -?> ; (-?>) :: (Eq a)=> [a] -> [b] -> (a -> Maybe b) -- Produce a total function by attempting a list bijection
-as -?> bs = \x -> lookup x (as`zip`bs)
-
-infix 5 -!> ; (-!>) :: (Eq a)=> [a] -> [b] -> (a -> b) -- Produce a partial function by forcing a list bijection
-as -!> bs = maybe (error "not in domain") id . (as -?> bs)
+(??) :: Functor f => f (p -> b) -> p -> f b
+f ?? y = fmap ($ y) f
+-- f ?? y = \x -> f x y
+-- f ?? y = flip f y
+-- f ?? y = (`f`y)
+-- f ?? y = f <&> ($ y)
+-- f ?? y = app . (app . (,) f &&& const y)
 
 readMaybe :: (Read a)=> String -> Maybe a
 readMaybe s = case reads s of
   [(x,"")] -> Just x
   _        -> Nothing
+
+chainr :: Foldable t => t (a -> a) -> (a -> a)
+chainr = foldr (>>>) id
+
+chainl :: Foldable t => t (a -> a) -> (a -> a)
+chainl = foldr (.) id
+
+bindr :: (Foldable t,Monad m) => t (a -> m a) -> a -> m a
+bindr = foldr (>=>) return
+
+bindl :: (Foldable t,Monad m) => t (a -> m a) -> a -> m a
+bindl = foldr (<=<) return
+
+compr :: (Foldable t,Arrow a) => t (a b b) -> a b b
+compr = foldr (>>>) returnA
+
+compl :: (Foldable t,Arrow a) => t (a b b) -> a b b
+compl = foldl (<<<) returnA
+
+testcompr = compr [(*2), (*3), (*5)] 1
+testcompr' = runKleisli (compr [Kleisli (\b -> [0:b,1:b]), Kleisli (\b -> [0:b,1:b])]) []
 
 -- Record syntax
 data Person = Instance { name :: String }
@@ -106,6 +132,29 @@ invertIO = interact (changeLinesWith invert)
 -- reduce list = map (\cs -> if cs`elem`fixed then cs else filter (`notElem`concat fixed) cs) list
 --   where fixed = [cs | cs<-list, length cs == 1]
 -- testreduce = reduce ["1234", "1", "34", "3"] == ["24", "1", "4", "3"]
+
+-- Produce a total function by attempting a list bijection
+infix 5 -?>
+(-?>) :: (Eq a)=> [a] -> [b] -> (a -> Maybe b)
+xs -?> ys = \x -> lookup x (xs`zip`ys)
+
+-- Produce a partial function by forcing a list bijection
+infix 5 -!>
+(-!>) :: (Eq a)=> [a] -> [b] -> (a -> b)
+xs -!> ys = (zip xs ys !>)
+--as -!> bs = maybe (error "not in domain") id . (as -?> bs)
+
+-- Lookup in an assoc list and error otherwise
+(!>) :: (Eq a)=> [(a,b)] -> a -> b
+xys !> x = maybe (error "not in assoc list") id (lookup x xys)
+
+
+
+{-data Mapping a b = Assoc [(a,b)] | Fun (a -> b)
+
+instance Category Mapping where
+  id = Fun id
+  (.) =-}
 
 
 --------------------------------------------------------------------------------
@@ -154,8 +203,8 @@ combinations n (x:xs) = map (x:) (combinations (n-1) xs) ++ combinations n xs
 
 _' = ()
 abc = (head .) . zip -- \(x:_) (y:_)->(x,y)
-bcd = map ($1) [ (+4), (\x->3*x-1).(2^) ] -- 5 2 2
-cde = ($2) sqrt -- sqrt 2
+bcd = map ($ 1) [ (+4), (\x->3*x-1).(2^) ] -- 5 2 2
+cde = ($ 2) sqrt -- sqrt 2
 --def = (thing, length thing) where thing = nub . map product . powerset $ [2,2,2,3,3,3,5,7,11] -- https://oeis.org/A000005/b000005.txt
 efg = (,) 1 2
 fgh = (,,) 2 3 4
@@ -171,8 +220,8 @@ opq = let 2 + 2 = 5 in 2 + 2
 pqr = putStrLn <$> ((++) <$> getLine <*> getLine)
 qrs = fmap (+1) (+2) 0
 rst = [1,2,4] < [1,2,5]
-stu = ($3) <$> (*) <$> [1,2,3]
-tuv = (<$>) ($"x") $ (<$>) id $ foldr (((<$>) (++).).(<*>)) [id, (++"0")] [[($"a")],[($"b")]]
+stu = ($ 3) <$> (*) <$> [1,2,3]
+tuv = (<$>) ($ "x") $ (<$>) id $ foldr (((<$>) (++).).(<*>)) [id, (++"0")] [[($ "a")],[($ "b")]]
 uvw = ((flip (:) .) . flip (:) . (:[])) 1 2 3
 vwx = 'a' <$ (111,259)
 wxy = ((*) . (+4) . (+10)) 1 1
