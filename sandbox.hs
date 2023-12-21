@@ -230,6 +230,7 @@ xyz = fix error
 list01 = [ 1 | True ]
 let01 = let {} in 2
 const01 = (const . const . const . const) 0 1 2 3 4
+testG | even 5 = 6 | odd 5 = 42
 
 
 --------------------------------------------------------------------------------
