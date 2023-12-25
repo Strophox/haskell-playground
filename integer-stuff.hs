@@ -1,60 +1,3 @@
-import Data.Array (Ix, listArray, (!), range)
-
-fix :: ((a -> b) -> (a -> b)) -> (a -> b)
-fix f = let y = f y in y
-
-fixMemo :: (Num a, Enum a, Ix a)=> ((a -> b) -> (a -> b)) -> (a -> b)
-fixMemo f n = (memoized!) n
-  where memoized = listArray (0,n) $ map (f (memoized!)) $ range (0,n)
-  --where memoized = array (0,n) [(i,f (memoized!) i) | i<-[0..n]]
-
--- Fibonnacci numbers
-
-fibRec :: Int -> Integer 
-fibRec 0 = 0
-fibRec 1 = 1
-fibRec n = fibRec (n - 1) +  fibRec (n - 2)
-
-fibIter :: Int -> Integer
-fibIter n = fst (fibStep n)
-  where fibStep 0 = (0, 1)
-        fibStep n = step (fibStep (n-1))
-        step (a, b) = (b, a + b)
-
-fibZip :: Int -> Integer -- Favourite
-fibZip n = fibs !! n
-  where fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
-
-fibScan :: Int -> Integer
-fibScan n = fibs !! n
-  where fibs = 0 : scanl (+) 1 fibs
-
-fibFix :: Integer -> Integer
-fibFix = fix fiblogic
-  where fiblogic = \rec n -> if n<=1 then n else rec (n-1) + rec (n-2)
-
-fibDyn :: Int -> Integer
-fibDyn n = fibs !! n
-  where fibs  = map fib [0..n]
-        fib 0 = 0
-        fib 1 = 1
-        fib n = fibs !! (n-1) + fibs !! (n-2)
-  
-fibArr :: Int -> Integer
-fibArr n = fibs ! n
-  where fibs = listArray (0,n) (map fib [0..n])
-        fib 0 = 0
-        fib 1 = 1
-        fib n = fibs ! (n-1) + fibs ! (n-2)
-
-fibMemo :: Integer -> Integer
-fibMemo = fixMemo fiblogic
-  where fiblogic = \rec n -> if n<=1 then n else rec (n-1) + rec (n-2)
-
-
---------------------------------------------------------------------------------
-
-
 -- Prime numbers
 
 aaronPrime :: Int -> Bool
@@ -115,6 +58,12 @@ collatzFun = traverse print . monotonous . flip zip [1..] . map collatz $ [1..]
 
 
 --------------------------------------------------------------------------------
+
+buildInt :: (Foldable t,Num a)=> t a -> a
+buildInt = foldl1 (\b a -> 10*b + a)
+
+
+---
 
 {-
 -- Introduce continuation as accumulating parameter:
