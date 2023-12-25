@@ -1,15 +1,14 @@
-{-# LANGUAGE ImpredicativeTypes #-}
---{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ImpredicativeTypes, GADTs #-}
 
 -- Taken from the following article:
 -- augustss.blogspot.com/2007/08/programming-in-c-ummm-haskell-heres.html
 
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 
-{-main = do TODO fix all this man
-  v <- fac 10
-  x <- runE v
-  print x-}
+main = do
+  x <- runE =<< fac 10
+  putStr "10! is equal to "
+  print x
 
 data E' v a where
   E :: IO a -> E' RValue a
@@ -25,12 +24,80 @@ runE :: E' v a -> IO a
 runE (E load)   = load
 runE (V load _) = load
 
-auto :: E a -> IO (forall v. E' v a)
-auto x = do
-  x' <- runE x
-  r <- newIORef x'
-  return (V (readIORef r) (writeIORef r))
+newE :: E a -> IO (forall v. E' v a)
+newE x = runE x      >>= \ x' ->
+         newIORef x' >>= \ r ->
+         return (V (readIORef r) (writeIORef r))
 
+(*=) :: Num a => V a -> E' v a -> IO ()
+(V load store) *= e = do
+  e' <- runE e
+  v  <- load
+  store (v * e')
+
+(-=) :: Num a => V a -> E' v a -> IO ()
+(V load store) -= e = do
+  e' <- runE e
+  v  <- load
+  store (v - e')
+
+(>.) :: Ord a => E' v a -> E' v a -> IO Bool
+x >. y = (>) <$> runE x <*> runE y
+
+while :: IO Bool -> IO a -> IO ()
+while cnd stmt = do
+  b <- cnd
+  if b then do
+    stmt
+    while cnd stmt
+  else
+    return ()
+
+instance (Num a, v ~ RValue) => Num (E' v a) where -- Thx Morrow
+  x + y = E ((+) <$> runE x <*> runE y)
+  x * y = E ((*) <$> runE x <*> runE y)
+  abs x = E (abs <$> runE x)
+  signum x = E (signum <$> runE x)
+  negate x = E (negate <$> runE x)
+  fromInteger n = E (return (fromInteger n))
+
+fac :: E Int -> IO (E Int)
+fac n =
+  newE 1 >>= \a ->
+  newE n >>= \i -> do {
+  while (i >. 0) $ do {
+    a *= i;
+    i -= 1;
+  };
+  return a
+  }
+{-NOTE bugged? https://gitlab.haskell.org/ghc/ghc/-/issues/20020
+fac :: E Int -> IO (E Int)
+fac n = do {
+  a <- newE 1;
+  i <- newE n;
+  while (i >. 0) $ do {
+    a *= i;
+    i -= 1;
+  };
+  return a
+  }
+-}
+
+{-NOTE literal translation by article
+fac' n = do
+  a <- newIORef 1
+  i <- newIORef n
+  whileM (do i' <- readIORef i; return $ i' > 0) $ do
+    i' <- readIORef i
+    a' <- readIORef a
+    writeIORef a (a' * i')
+    writeIORef i (i' - 1)
+  a' <- readIORef a
+  return a'
+-}
+
+{-NOTE from article
 one :: E Int
 one = E $ return 1
 
@@ -43,70 +110,7 @@ plus x y = E $ do
 (=:) :: V a -> E a -> IO ()
 (V _ store) =: e = do
   e' <- runE e
-  store e'
-
-(*=) :: (Num a)=> V a -> E' v a -> IO ()
-(V load store) *= e = do
-  e' <- runE e
-  v  <- load
-  store (v * e')
-
-(-=) :: (Num a)=> V a -> E' v a -> IO ()
-(V load store) -= e = do
-  e' <- runE e
-  v  <- load
-  store (v - e')
-
-(>.) :: (Ord a)=> E' v a -> E' v a -> IO Bool
-x >. y = (>) <$> runE x <*> runE y
-
-while :: IO Bool -> IO a -> IO ()
-while cnd stmt = do
-  b <- cnd
-  if b then do
-    stmt
-    while cnd stmt
-  else do
-    return ()
-
-instance Num a => Num (E a) where
-  x + y = E ((+) <$> runE x <*> runE y)
-  x * y = E ((*) <$> runE x <*> runE y)
-  abs x = E (abs <$> runE x)
-  signum x = E (signum <$> runE x)
-  fromInteger n = E (return (fromInteger n))
-  negate x = E (negate <$> runE x)
-
---fac :: Int -> IO (E Int)
-fac n = do {
-  a <- auto 1;
-  i <- auto n;
-  while (i >. 0) $ do {
-    a *= i;
-    i -= 1;
-  };
-  return a;
-}
-
-{-NOTE TODO how?
-test = do
-  x <- auto one;
-  x =: x `plus` x;
-  x;
-  --(x `plus` x) =: one -- Should Error-}
-
-{-NOTE translation, from the paper
-fac' n = do
-  a <- newIORef 1
-  i <- newIORef n
-  whileM (do i' <- readIORef i; return $ i' > 0) $ do
-    i' <- readIORef i
-    a' <- readIORef a
-    writeIORef a (a' * i')
-    writeIORef i (i' - 1)
-  a' <- readIORef a
-  return a'
--}
+  store e'-}
 
 {-NOTE naïve, old implementation
 import Control.Monad.ST (ST, runST)
