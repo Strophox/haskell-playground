@@ -129,15 +129,25 @@ foldl' f z (x:xs) = let z' = z `f` x in seq z' $ foldl' f z' xs
 --repeat :: a -> [a]
 --replicate :: Int -> a -> [a]
 --cycle :: [a] -> [a]
-unfoldr :: (b -> Maybe (a,b)) -> b -> [a] -- unfoldr f' (foldr f z xs) == xs <==> f' (f x y) = Just (x,y) && f' z = Nothing
-unfoldr f' seed = case f' seed of
-  Just (x, seed') -> x : unfoldr f' seed'
-  Nothing -> []
+unfoldr :: (b -> Maybe (a,b)) -> b -> [a]
+unfoldr f' b0 = go b0 where
+  go b = case f' b of
+    Just (a,b') -> a : go b'
+    Nothing     -> []
+--unfoldr :: (b -> Maybe (a,b)) -> b -> [a] -- We have: unfoldr f' (foldr f z xs) == xs <==> f' (f x y) = Just (x,y) && f' z = Nothing
+--unfoldr f' seed = case f' seed of
+--  Just (x, newseed) -> x : unfoldr f' newseed
+--  Nothing -> []
 
 unfoldl :: (b -> Maybe (b,a)) -> b -> [a]
-unfoldl f' seed = case f' seed of
-  Just (seed',x) = unfoldl f' seed' ++ [x]
-  Nothing -> []
+unfoldl f' b0 = go [] b0 where
+  go as b = case f' b of
+    Just (b',a) -> go (a:as) b'
+    Nothing     -> as
+--unfoldl :: (b -> Maybe (b,a)) -> b -> [a]
+--unfoldl f' seed = case f' seed of
+--  Just (seed,x) = unfoldl f' newseed ++ [x]
+--  Nothing -> []
 
 -- Sublists
 --take :: Int -> [a] -> [a]
@@ -303,7 +313,7 @@ deleteAt i xs = take i xs ++ drop (i+1) xs
 
 setAt :: Int -> a ->[a] -> [a] -- FIXME If the index is negative or exceeds list length, the original list will be returned.
 setAt i x xs = take i xs ++ [x] ++ drop (i+1) xs
-s
+
 modifyAt :: Int -> (a -> a) -> [a] -> [a] -- FIXME If the index is negative or exceeds list length, the original list will be returned.
 modifyAt i f xs = take i xs ++ [f (xs!!i)] ++ drop (i+1) xs
 
