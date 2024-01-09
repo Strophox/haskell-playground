@@ -134,6 +134,11 @@ unfoldr f' seed = case f' seed of
   Just (x, seed') -> x : unfoldr f' seed'
   Nothing -> []
 
+unfoldl :: (b -> Maybe (b,a)) -> b -> [a]
+unfoldl f' seed = case f' seed of
+  Just (seed',x) = unfoldl f' seed' ++ [x]
+  Nothing -> []
+
 -- Sublists
 --take :: Int -> [a] -> [a]
 --drop :: Int -> [a] -> []
