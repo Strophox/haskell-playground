@@ -3,9 +3,22 @@ import Data.Array (Ix, listArray, (!), range)
 import Control.Monad.ST (ST, runST)
 import Data.Array.ST (STArray, newArray, readArray, writeArray)
 
-indexOf 0   = 0
-indexOf fib = round (logBase phi (sqrt 5 * fib))
-  where phi = (1 + sqrt 5) / 2
+main = let n = 0 in mapM_ (\(str,f) -> putStrLn $ str<>": "<>show (f n))
+       [ ("Recursive",fibRecursive)
+       , ("Iterative / tailrec.",fibIterative)
+       , ("Using iterate",fibIterate)
+       , ("Using zipWith",fibZip)
+       , ("Using scanl", fibScan)
+       , ("Using list as rec. lookup",fibList)
+       , ("Using array as rec. lookup",fibArray)
+       , ("Using fixpoint operator for rec.",fibFix)
+       , ("Using memoizing fixpoint operator for rec.",fibMemo)
+       --, ("Using Binet's formula",fibBinet)
+       --, ("Using exponentiation and rounding",fibRound)
+       , ("Using matrix multiplication",fibVector)
+       , ("Using fast matrix exponentiation",fibMatrix)
+       , ("Using the ST monad",fibST)
+       ]
 
 -- Fibonacci implementations
 
@@ -63,27 +76,31 @@ fibVector n = fst (iterate ((0,1, 1,1).*) (0, 1) !! n)
 
 fibMatrix n = fst $ power (0,1, 1,1) n .* (0, 1)
   where (a,b, c,d) .* (e, f) = (a*e + b*f, c*e + d*f)
-        (a,b, c,d) .# (e,f, g,h) =
+        (a,b, c,d) .@ (e,f, g,h) =
           (a*e + b*g, a*f + b*h,
            c*e + d*g, c*f + d*h)
         power m n
-          | n == 1 = m
-          | even n = let h = power m (n`div`2) in h .# h
-          | odd  n = m .# power m (n-1)
+          | n == 0 = (1,0, 0,1)
+          | even n = let h = power m (n`div`2) in h .@ h
+          | odd  n = m .@ power m (n-1)
 
-fibFast n = -- TODO simplify Matrix method!
+{-FIXME for n>10
+fibNice = (\(_,x,_,_) -> x) . pow id (0,1, 1,1)
+  where (a,b,c,d) @ (e,f,g,h) = (a*e+b*g, a*f+b*h, c*e+d*g, c*f+d*h)
+        join = (>>= id)
+        pow f m n = if n == 0 then f (1,0, 0,1) else pow ((if odd n then (@) m else id) . join (@) . f) m (n`div`2)-}
 
 fibST n = runST fib where
-  fib :: ST s Integer
+  fib :: ST s Int
   fib = do
-    (vars :: STArray s Char Integer) <- newArray ('a','z') 0
+    (vars :: STArray s Char Int) <- newArray ('a','z') 0
     writeArray vars 'a' 0
     writeArray vars 'b' 1
     writeArray vars 'n' n
     fibLoop vars
     a <- readArray vars 'a'
     return a
-  fibLoop :: STArray s Char Integer -> ST s ()
+  fibLoop :: STArray s Char Int -> ST s ()
   fibLoop vars = do
     n <- readArray vars 'n'
     if n == 0 then do
@@ -96,3 +113,10 @@ fibST n = runST fib where
       writeArray vars 'b' (a + b)
       writeArray vars 'n' (n - 1)
       fibLoop vars
+
+-- Inverse Fibonacci
+
+indexOf 0   = 0
+indexOf 1   = error "Fibonacci sequence has two '1's"
+indexOf fib = round (logBase phi (sqrt 5 * fib)) -- Precision break at 1475
+  where phi = (1 + sqrt 5) / 2
