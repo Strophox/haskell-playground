@@ -159,6 +159,27 @@ instance Category Mapping where
 
 --------------------------------------------------------------------------------
 
+{-
+fix :: (a -> a) -> a
+fix f = let x = f x in x
+-- fix f = f (fix f) -- Less efficient: compare fix (1:) !! (10^8)
+-- fix f = foldr (\_->f) undefined (repeat undefined)
+
+fixAssoc :: [(a, [(a, b -> c)] -> b -> c)] -> [(a, b -> c)]
+fixAssoc cs = map (fmap ($ fixAssoc cs)) cs
+-}
+
+loeb :: Functor f => f (f b -> b) -> f b
+loeb x = fix $ \xs -> fmap ($ xs) x
+--loeb x = go where go = fmap ($ go) x
+--loeb x = fmap ($ loeb x) x
+
+loebM :: (Traversable f, MonadFix m) => f (f b -> m b) -> m (f b)
+loebM x = mfix $ \xs -> traverse ($ xs) x
+
+
+--------------------------------------------------------------------------------
+
 
 -- Interesting set operations
 
