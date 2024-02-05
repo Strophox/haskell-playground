@@ -258,6 +258,7 @@ testG | even 5 = 6 | odd 5 = 42
 appl = let (===) a b c = a == b && b == c
            f = (===) <$> (+2) <*> (*2) <*> (^2)
        in (f 1, f 2)
+ho_poly (id :: forall a. a -> a) = (id 7, id True) -- Requires type annot
 
 
 --------------------------------------------------------------------------------
