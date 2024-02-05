@@ -177,6 +177,9 @@ loeb x = fix $ \xs -> fmap ($ xs) x
 loebM :: (Traversable f, MonadFix m) => f (f b -> m b) -> m (f b)
 loebM x = mfix $ \xs -> traverse ($ xs) x
 
+moeb :: (((a -> b) -> b) -> c -> a) -> c -> a
+moeb f x = go where go = f ($ go) x
+
 
 --------------------------------------------------------------------------------
 
@@ -252,6 +255,9 @@ list01 = [ 1 | True ]
 let01 = let {} in 2
 const01 = (const . const . const . const) 0 1 2 3 4
 testG | even 5 = 6 | odd 5 = 42
+appl = let (===) a b c = a == b && b == c
+           f = (===) <$> (+2) <*> (*2) <*> (^2)
+       in (f 1, f 2)
 
 
 --------------------------------------------------------------------------------
