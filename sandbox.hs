@@ -148,14 +148,13 @@ xs -!> ys = (zip xs ys !>)
 (!>) :: (Eq a)=> [(a,b)] -> a -> b
 xys !> x = maybe (error "not in assoc list") id (lookup x xys)
 
-
-
 {-data Mapping a b = Assoc [(a,b)] | Fun (a -> b)
 
 instance Category Mapping where
   id = Fun id
   (.) =-}
 
+res = (fmap . fmap . fmap) sum . zipWith
 
 --------------------------------------------------------------------------------
 
