@@ -25,7 +25,7 @@ dfs :: Graph -> Vertex -> [Vertex]
 dfs graph start = run [] [start] where
   run seen [] = seen
   run seen (node:stack)
-    | node`elem`seen = run (node:seen) stack
+    | node`elem`seen = run seen stack
     | otherwise      = run (node:seen) (neighbors++stack)
     where neighbors = graph ! node
 
