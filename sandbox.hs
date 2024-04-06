@@ -7,7 +7,7 @@
 import System.IO.Unsafe (unsafePerformIO) -- OH NO
 import Control.Monad
 import Control.Arrow
-import Control.Category
+--import Control.Category hiding ((.),id)
 --import Data.Bool (bool)
 --import System.Random -- myConstant = unsafePerformIO randomIO
 -- https://downloads.haskell.org/ghc/latest/docs/libraries/
@@ -125,7 +125,7 @@ invertIO = interact (changeLinesWith invert)
   where changeLinesWith f = unlines . map (\line -> last line`seq`f line) . lines
         invert = map invertChar
         invertChar c = if c`elem`['A'..'Z']++['a'..'z'] then invertLetter c else c
-        invertLetter = toEnum . (+ 97) . (25-) . (subtract 97) . fromEnum
+        invertLetter = toEnum . (+ 97) . (25-) . subtract 97 . fromEnum
 
 -- https://youtu.be/O1-ruHzabAU
 -- reduce :: Eq a=> [[a]] -> [[a]]
@@ -154,7 +154,8 @@ instance Category Mapping where
   id = Fun id
   (.) =-}
 
-res = (fmap . fmap . fmap) sum . zipWith
+res :: (a -> b -> Integer) -> [a] -> [b] -> Integer
+res = (fmap . fmap . fmap) sum zipWith
 
 --------------------------------------------------------------------------------
 
@@ -173,8 +174,8 @@ loeb x = fix $ \xs -> fmap ($ xs) x
 --loeb x = go where go = fmap ($ go) x
 --loeb x = fmap ($ loeb x) x
 
-loebM :: (Traversable f, MonadFix m) => f (f b -> m b) -> m (f b)
-loebM x = mfix $ \xs -> traverse ($ xs) x
+--loebM :: (Traversable f, MonadFix m) => f (f b -> m b) -> m (f b)
+--loebM x = mfix $ \xs -> traverse ($ xs) x
 
 moeb :: (((a -> b) -> b) -> c -> a) -> c -> a
 moeb f x = go where go = f ($ go) x
@@ -213,10 +214,10 @@ wordsN alphabet n = sequence (replicate n alphabet)
 kleeneStar :: [a] -> [[a]] -- Complete language
 kleeneStar alphabet = [word | n<-[0..], word <- wordsN alphabet n]
 
-combinations :: Int -> [a] -> [[a]]
-combinations 0 _ = [[]]
-combinations _ [] = []
-combinations n (x:xs) = map (x:) (combinations (n-1) xs) ++ combinations n xs
+combinations :: [a] -> Int -> [[a]]
+combinations _ 0 = [[]]
+combinations [] _ = []
+combinations (x:xs) n = map (x:) (combinations xs (n-1)) ++ combinations xs n
 
 
 --------------------------------------------------------------------------------
@@ -258,6 +259,18 @@ appl = let (===) a b c = a == b && b == c
            f = (===) <$> (+2) <*> (*2) <*> (^2)
        in (f 1, f 2)
 ho_poly (id :: forall a. a -> a) = (id 7, id True) -- Requires type annot
+
+pal1,pal2,pal3,pal4 :: String -> Bool
+pal1 = (==) <$> id <*> reverse
+-- pal1 = \x -> (==) (id x) (reverse x)
+pal2 = (==) <$> reverse <*> id 
+-- pal2 = \x -> (==) (reverse x) (id x)
+pal3 = (==) <*> reverse
+-- pal3 = \x -> (==) x (reverse x)
+pal4 = reverse >>= (==)
+-- pal4 = \x -> (==) (reverse x) x
+
+lambdaOps = map (\(#) -> 2 # 3) [(+), (*), (^)]
 
 
 --------------------------------------------------------------------------------
