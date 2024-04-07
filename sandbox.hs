@@ -276,6 +276,56 @@ lambdaOps = map (\(#) -> 2 # 3) [(+), (*), (^)]
 --------------------------------------------------------------------------------
 
 
+--data Bool = False | True
+--  deriving (Eq,Ord,Enum,Ix,Bounded,Read,Show)
+
+instance Num Bool where
+  (+) = (/=)
+  (*) = (&&)
+  abs = id
+-- Law: abs x * signum x == x ✅
+  signum = id
+  negate = id
+  fromInteger = (/=) 0
+{- Laws:
+(x + y) + z = x + (y + z)
+  (x /= y) /= z = x /= (y /= z) ✅
+x + y = y + x
+  x /= y = y /= x ✅
+x + fromInteger 0 = x
+  x /= False = x ✅
+x + negate x = fromInteger 0
+  x /= x = False ✅
+(x * y) * z = x * (y * z)
+  (x && y) && z = x && (y && z) ✅
+x * fromInteger 1 = x
+  x && True = x ✅
+fromInteger 1 * x = x
+  True && x = x ✅
+a * (b + c) = (a * b) + (a * c)
+  a && (b /= c) = (a && b) /= (a && c) ✅
+(b + c) * a = (b * a) + (c * a)
+  (b /= c) && a = (b && a) /= (c && a) ✅
+-}
+
+instance Real Bool where
+  toRational False = 0 :% 1
+  toRational True  = 1 :% 1
+
+instance Integral Bool where
+  quot _ False = error "divide by zero"
+  quot a _     = a
+  rem _ False = error "divide by zero"
+  rem _ _     = False
+  quotRem a b = (quot a b, rem a b)
+-- Law: fromInteger (toInteger i) == i ✅
+  toInteger False = 0
+  toInteger True  = 1
+
+
+--------------------------------------------------------------------------------
+
+
 -- Rewriting everything as foldr
 {-
 foldr op a [] = []
