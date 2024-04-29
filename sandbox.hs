@@ -258,7 +258,6 @@ testG | even 5 = 6 | odd 5 = 42
 appl = let (===) a b c = a == b && b == c
            f = (===) <$> (+2) <*> (*2) <*> (^2)
        in (f 1, f 2)
-ho_poly (id :: forall a. a -> a) = (id 7, id True) -- Requires type annot
 
 pal1,pal2,pal3,pal4 :: String -> Bool
 pal1 = (==) <$> id <*> reverse
@@ -271,6 +270,20 @@ pal4 = reverse >>= (==)
 -- pal4 = \x -> (==) (reverse x) x
 
 lambdaOps = map (\(#) -> 2 # 3) [(+), (*), (^)]
+
+cartesian3 =  (,,) <$> [1,2] <*> [3,4] <*> [5,6]
+
+
+--------------------------------------------------------------------------------
+
+
+ho_poly (id :: forall a. a -> a) = (id 7, id True) -- Requires type annot
+
+-- The following declaration cannot be given a polymorphic type schema by the Hindley-Milner algorithm:
+f (x, 0) = x
+f (x, n) = fst $ f ((x,x), n-1)
+-- But f has a valid type schema:
+f :: (a, Int) -> a
 
 
 --------------------------------------------------------------------------------
