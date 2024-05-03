@@ -1,5 +1,10 @@
+-- 'Unfold' fib
+import Data.List (unfoldr)
+
+-- 'Dynamic Programming' fib
 import Data.Array (Ix, listArray, (!), range)
 
+-- 'Imperative' fib
 import Control.Monad.ST (ST, runST)
 import Data.Array.ST (STArray, newArray, readArray, writeArray)
 
@@ -46,6 +51,9 @@ fibList n = fibs !! n
         fib 0 = 0
         fib 1 = 1
         fib n = fibs !! (n-1) + fibs !! (n-2)
+
+fibUnfold n = fibs !! n
+  where fibs = unfoldr (\(a,b) -> Just (a,(b,a+b))) (0,1)
 
 fibArray n = fibs ! n
   where fibs = listArray (0,n) (fib <$> range (0,n))

@@ -7,6 +7,8 @@
 import System.IO.Unsafe (unsafePerformIO) -- OH NO
 import Control.Monad
 import Control.Arrow
+import Data.List (unfoldr)
+-- import Data.Ratio ((:%)) TODO what??
 --import Control.Category hiding ((.),id)
 --import Data.Bool (bool)
 --import System.Random -- myConstant = unsafePerformIO randomIO
@@ -322,8 +324,8 @@ a * (b + c) = (a * b) + (a * c)
 -}
 
 instance Real Bool where
-  toRational False = 0 :% 1
-  toRational True  = 1 :% 1
+  toRational False = toRational 0 --0 :% 1??
+  toRational True  = toRational 1 --1 :% 1??
 
 instance Integral Bool where
   quot _ False = error "divide by zero"
@@ -380,6 +382,13 @@ scanl op a xs = h xs a
 
 scanl'f :: (b -> a -> b) -> b -> [a] -> [b]
 scanl'f op a xs = foldr (\x' fun a -> a : (fun (op a x'))) (\a -> [a]) xs a
+
+
+--------------------------------------------------------------------------------
+
+
+map'0 f = foldr (\x xs -> f x : xs) []
+map'1 f = unfoldr (\l -> case l of [] -> Nothing; (x:xs) -> Just (f x, xs))
 
 
 --------------------------------------------------------------------------------
