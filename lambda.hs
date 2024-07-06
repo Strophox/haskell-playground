@@ -8,7 +8,7 @@ lAND = \a b t f -> a (b t f) f -- (&&)
 lOR  = \a b t f -> a t (b t f) -- (||)
 
 -- Tuples
-lPAIR = \x y t -> t x y    -- (x, y)
+lTUP = \x y t -> t x y    -- (x, y)
 lFST  = \p -> p (\x y -> x) -- fst
 lSND  = \p -> p (\x y -> y) -- snd
 
@@ -19,11 +19,11 @@ l1 = lS l0 -- 1
 l2 = lS l1 -- 2
 l3 = lS l2 -- 3
 
-lADD  = \n m s z -> n s (m s z) -- n + m
-lMULT = \n m s z -> n (m s) z   -- n * m
-lEXP  = \n m s z -> m n s z     -- n ^ m
-lPRE  = \n -> lSND (n (lG lS) (lPAIR l0 l0)) -- (subtract 1)
-  where lG = \s p -> lPAIR (s (lFST p)) (lFST p)
+lADD = \n m s z -> n s (m s z) -- n + m
+lMUL = \n m s z -> n (m s) z   -- n * m
+lEXP = \n m s z -> m n s z     -- n ^ m
+lPRE = \n -> lSND (n (lG lS) (lTUP l0 l0)) -- (subtract 1)
+  where lG = \s p -> lTUP (s (lFST p)) (lFST p)
 -- lSUB  = \n m s z -> n lPRE (m s z)-- n - m -- death
 
 two_lambda = two (+1) 0 where two = \f x -> f (f x)
