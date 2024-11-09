@@ -14,6 +14,7 @@ main = let n = 0 in mapM_ (\(str,f) -> putStrLn $ str<>": "<>show (f n))
        , ("Using iterate",fibIterate)
        , ("Using zipWith",fibZip)
        , ("Using scanl", fibScan)
+       , ("Using origami", fibOrigami)
        , ("Using list as rec. lookup",fibList)
        , ("Using array as rec. lookup",fibArray)
        , ("Using fixpoint operator for rec.",fibFix)
@@ -45,6 +46,12 @@ fibZip n = fibs !! n
 
 fibScan n = fibs !! n
   where fibs = 0 : scanl (+) 1 fibs
+
+{-fibOrigami n = fold . unfold $ n
+  where fold :: (x -> s -> s) -> s -> [x] -> s
+        unfold :: (s -> Maybe (x, s)) -> s -> [x]
+        fold f y xs = case xs of [] -> y; (x:xs') -> f x (fold f y xs')
+        unfold g y  = case g y of Nothing -> []; Just (x, y') -> x : unfoldr g y'-}
 
 fibList n = fibs !! n
   where fibs  = map fib [0..n]
